@@ -2,30 +2,6 @@ from flask_restful import Resource, reqparse
 from models.modelo import HotelModel
 
 
-# hoteis =[
-#     {
-#         'hotel_id':'jamaica',
-#         'nome':'Jamaica Hotel',
-#         'estrelas':4.3,
-#         'diaria': 420.42,
-#         'cidade':'Kingston'
-#     },
-#      {
-#         'hotel_id':'amsterdam',
-#         'nome':'Amsterdam Hotel',
-#         'estrelas':4.9,
-#         'diaria': 450.35,
-#         'cidade':'Amsterdam'
-#     },
-#      {
-#         'hotel_id':'montevideo',
-#         'nome':'Montevideo Hotel',
-#         'estrelas':4.2,
-#         'diaria': 342.00,
-#         'cidade': 'Montevideo'
-#     }
-    
-# ]
 
 class Hoteis(Resource):
     def get(self):
@@ -33,8 +9,8 @@ class Hoteis(Resource):
 
 class Hotel(Resource):
         atributos = reqparse.RequestParser()
-        atributos.add_argument('nome')
-        atributos.add_argument('estrelas')
+        atributos.add_argument('nome', type=str, required=True, help="The field 'nome' cannot be empty")
+        atributos.add_argument('estrelas', type=float, required=True, help="The field 'estrelas' cannot be empty")
         atributos.add_argument('diaria')
         atributos.add_argument('cidade')
     
@@ -50,7 +26,10 @@ class Hotel(Resource):
                 return{"message":"Hotel id '{}' already exists.".format(hotel_id)}, 400
             dados = Hotel.atributos.parse_args()
             hotel = HotelModel(hotel_id, **dados)
-            hotel.save_hotel()
+            try:
+                hotel.save_hotel()
+            except:
+                return{'message':'An internal error occurred trying to save the hotel.'}, 500 #Internal server error
             return hotel.json()
             
               
@@ -63,13 +42,19 @@ class Hotel(Resource):
                 hotel_encontrado.save_hotel()
                 return hotel_encontrado.json(), 200
             hotel = HotelModel(hotel_id, **dados)
-            hotel.save_hotel()
+            try:
+                hotel.save_hotel()
+            except:
+                return{'message':'An internal error occurred trying to update the hotel.'}, 500 #Internal server error
             return hotel.json(), 201 # created
             
     
         def delete(self, hotel_id):
             hotel = HotelModel.find_hotel(hotel_id)
             if hotel:
-                hotel.delete_hotel()
+                try:
+                    hotel.delete_hotel()
+                except:
+                        return{'message':'An error occurred trying to delete the hotel'}, 500 # Internal server error
                 return{'message':'Hotel deleted.'}
             return{'message':'Hotel not found.'}
